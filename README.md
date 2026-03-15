@@ -1,5 +1,7 @@
 # 🧲 Magnetize
 
+**[Live Demo](https://magnetize.onrender.com/)**
+
 Magnetize is a minimalistic, modern, and privacy-focused torrent metadata extractor. It allows users to upload `.torrent` files or provide URLs/Magnet links to fetch metadata, view file contents, and check for real-time seeds/peers.
 
 Designed for self-hosting, it performs all metadata fetching and health checks on the server side, keeping the user's IP hidden from trackers and remote hosts.
