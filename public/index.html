@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magnetize - Minimalistic Torrent Metadata Extractor</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script src="js/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <div class="brand">
+          <div class="logo">🧲 <span>Magnetize</span></div>
+          <p class="subtitle">Minimalistic torrent metadata extractor</p>
+        </div>
+        <div class="theme-switcher" id="themeSwitcher">
+          <button data-theme="light" title="Light Theme">☀️</button>
+          <button data-theme="system" title="System Theme" class="active">💻</button>
+          <button data-theme="dark" title="Dark Theme">🌙</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="app-card">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="file"><a href="#file">File</a></button>
+          <button class="tab-btn" data-tab="url"><a href="#url">URL</a></button>
+        </div>
+
+        <form id="torrentForm">
+          <!-- File Upload -->
+          <div class="input-group active" id="file-input">
+            <div class="file-drop-zone" id="fileDropZone">
+              <div class="drop-icon">📄</div>
+              <p>Drop a .torrent file or click to browse</p>
+              <input type="file" id="fileInput" accept=".torrent,.magnet,application/x-bittorrent">
+            </div>
+            <div id="selectionBox" class="selection-box"></div>
+          </div>
+
+          <!-- URL Fetch -->
+          <div class="input-group" id="url-input">
+            <div class="url-input-wrapper">
+              <input type="url" id="urlInput" placeholder="https://example.com/file.torrent or magnet:?xt=..." autocomplete="off">
+              <button type="button" id="urlGoBtn" class="btn-primary" style="padding: 0 1.5rem; flex: initial;">Go</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div id="resultContainer"></div>
+    </main>
+
+    <div id="status" class="status"></div>
+    
+    <footer>
+      <p>&copy; 2026 Roman Linev &bull; <a href="https://github.com/angelwzr/magnetize" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a> &bull; v1.0.1 &bull; Privacy First &bull; No Tracking</p>
+    </footer>
+  </div>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>

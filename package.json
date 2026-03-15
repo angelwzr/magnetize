@@ -1,0 +1,44 @@
+{
+  "name": "magnetize",
+  "version": "1.0.1",
+  "description": "A minimalistic, private torrent metadata extractor",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "serve": "pm2 start ecosystem.config.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "magnet",
+    "torrent",
+    "parser",
+    "extractor",
+    "privacy",
+    "self-hosted"
+  ],
+  "author": "Roman Linev",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.5.0",
+    "helmet": "^8.0.0",
+    "ip": "^2.0.1",
+    "parse-torrent": "9.1.5",
+    "webtorrent-health": "^1.2.0"
+  },
+  "overrides": {
+    "ip": "^2.0.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "babel-jest": "^30.3.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.2.2"
+  }
+}
