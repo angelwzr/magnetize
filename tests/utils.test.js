@@ -1,4 +1,4 @@
-const { formatBytes } = require('../server');
+const { formatBytes } = require('../lib/utils');
 
 describe('formatBytes', () => {
   test('formats bytes correctly', () => {

@@ -1,4 +1,5 @@
 // Simple Express server for Magnetize - Torrent/Magnet Link Extractor
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
@@ -6,12 +7,17 @@ const path = require('path');
 const helmet = require('helmet');
 const torrentService = require('./lib/torrentService');
 const { formatBytes } = require('./lib/utils');
+const { apiKeyAuth } = require('./lib/auth');
+const { globalLimiter, machineLimiter } = require('./lib/limiter');
+const { SSEServerTransport } = require("@modelcontextprotocol/sdk/server/sse.js");
+const mcpServer = require('./lib/mcpServer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
 
+app.use(globalLimiter);
 app.use(helmet({
     referrerPolicy: { policy: 'no-referrer' },
     contentSecurityPolicy: {
@@ -39,7 +45,41 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
+/**
+ * MCP SSE Endpoints (Secured)
+ */
+let mcpTransport;
+
+app.get('/mcp', machineLimiter, apiKeyAuth, async (req, res) => {
+    if (mcpTransport) {
+        await mcpServer.close();
+    }
+    
+    // Ensure the client uses the API key in the POST endpoint if it was provided in the query
+    const queryKey = req.query.apiKey || req.query.api_key;
+    const messagesEndpoint = queryKey 
+        ? `/mcp/messages?apiKey=${queryKey}` 
+        : "/mcp/messages";
+
+    mcpTransport = new SSEServerTransport(messagesEndpoint, res);
+    await mcpServer.connect(mcpTransport);
+});
+
+app.post('/mcp/messages', machineLimiter, apiKeyAuth, async (req, res) => {
+    if (!mcpTransport) {
+        return res.status(400).json({ error: "No active MCP transport" });
+    }
+    await mcpTransport.handlePostMessage(req, res, req.body);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Apply machine limiter to all API routes
+app.use('/api', machineLimiter);
+
+/**
+ * PUBLIC API (For Web UI)
+ */
 
 /**
  * @api {post} /api/torrent/file Parse uploaded .torrent file
@@ -74,6 +114,50 @@ app.post('/api/torrent/url', async (req, res) => {
     }
 });
 
+/**
+ * SECURED API (For Programmatic/Machine Access)
+ */
+
+/**
+ * @api {get} /api/convert Convert torrent URL or Magnet URI to simplified magnet object.
+ * Skips health check for performance.
+ */
+app.get('/api/convert', apiKeyAuth, async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).json({ error: 'No URL provided' });
+        }
+        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'));
+        res.status(200).json({
+            magnet: result.magnetUri,
+            infoHash: result.infoHash,
+            name: result.name
+        });
+    } catch (err) {
+        console.error('Convert API Error:', err.message);
+        res.status(400).json({ error: err.message });
+    }
+});
+
+/**
+ * @api {get} /api/inspect Inspect torrent URL or Magnet URI for full metadata.
+ * Performs health check to get seeds and peers.
+ */
+app.get('/api/inspect', apiKeyAuth, async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).json({ error: 'No URL provided' });
+        }
+        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'));
+        res.status(200).json(result);
+    } catch (err) {
+        console.error('Inspect API Error:', err.message);
+        res.status(400).json({ error: err.message });
+    }
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -82,6 +166,14 @@ app.get('*', (req, res) => {
  * Starts the Express server.
  */
 function startServer() {
+    if (!process.env.API_KEY) {
+        process.env.API_KEY = require('crypto').randomBytes(16).toString('hex');
+        console.log('--------------------------------------------------');
+        console.log('⚠️  SECURITY: No API_KEY set in environment.');
+        console.log(`🔑  Generated Random API Key: ${process.env.API_KEY}`);
+        console.log('--------------------------------------------------');
+    }
+
     const server = app.listen(PORT, () => {
         console.log(`🧲 Magnetize Server running on http://localhost:${PORT}`);
     });
@@ -101,4 +193,4 @@ process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception thrown:', err);
 });
 
-module.exports = { app, formatBytes };
+module.exports = { app };
