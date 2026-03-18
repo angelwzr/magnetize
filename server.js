@@ -6,7 +6,7 @@ const fileUpload = require('express-fileupload');
 const path = require('path');
 const helmet = require('helmet');
 const torrentService = require('./lib/torrentService');
-const { apiKeyAuth } = require('./lib/auth');
+const { apiKeyAuth, getApiKey } = require('./lib/auth');
 const { globalLimiter, machineLimiter } = require('./lib/limiter');
 const McpServerManager = require('./lib/mcpServer');
 
@@ -50,12 +50,9 @@ app.get('/health', (req, res) => {
  * MCP SSE Endpoints (Secured)
  */
 app.get('/mcp', machineLimiter, apiKeyAuth, async (req, res) => {
-    // Ensure the client uses the API key in the POST endpoint if it was provided in the query
-    const queryKey = req.query.apiKey || req.query.api_key;
-    const messagesEndpoint = queryKey 
-        ? `/mcp/messages?apiKey=${queryKey}` 
-        : "/mcp/messages";
-
+    const apiKey = getApiKey(req);
+    // Standardize on header-based auth, but maintain SSE-compatible messages endpoint
+    const messagesEndpoint = `/mcp/messages`;
     await mcpManager.handleSseConnection(messagesEndpoint, res);
 });
 
@@ -69,11 +66,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', machineLimiter);
 
 /**
- * PUBLIC API (For Web UI)
+ * API (For Web UI and Programmatic Access)
  */
 
 /**
- * @api {post} /api/torrent/file Parse uploaded .torrent file
+ * @api {post} /api/torrent/file Parse uploaded .torrent file.
+ * Publicly accessible via UI.
  */
 app.post('/api/torrent/file', async (req, res) => {
     try {
@@ -89,11 +87,12 @@ app.post('/api/torrent/file', async (req, res) => {
 });
 
 /**
- * @api {post} /api/torrent/url Parse torrent URL or Magnet URI
+ * @api {get} /api/torrent/url Parse torrent URL or Magnet URI.
+ * Secured - requires API Key.
  */
-app.post('/api/torrent/url', async (req, res) => {
+app.get('/api/torrent/url', apiKeyAuth, async (req, res) => {
     try {
-        const url = req.body.url || req.query.url;
+        const { url } = req.query;
         if (!url) {
             return res.status(400).json({ error: 'No URL provided' });
         }
@@ -106,12 +105,8 @@ app.post('/api/torrent/url', async (req, res) => {
 });
 
 /**
- * SECURED API (For Programmatic/Machine Access)
- */
-
-/**
  * @api {get} /api/convert Convert torrent URL or Magnet URI to simplified magnet object.
- * Skips health check for performance.
+ * Secured - requires API Key. Skips health check.
  */
 app.get('/api/convert', apiKeyAuth, async (req, res) => {
     try {
@@ -119,7 +114,7 @@ app.get('/api/convert', apiKeyAuth, async (req, res) => {
         if (!url) {
             return res.status(400).json({ error: 'No URL provided' });
         }
-        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'));
+        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'), { skipHealth: true });
         res.status(200).json({
             magnet: result.magnetUri,
             infoHash: result.infoHash,
@@ -133,7 +128,7 @@ app.get('/api/convert', apiKeyAuth, async (req, res) => {
 
 /**
  * @api {get} /api/inspect Inspect torrent URL or Magnet URI for full metadata.
- * Performs health check to get seeds and peers.
+ * Secured - requires API Key. Performs health check.
  */
 app.get('/api/inspect', apiKeyAuth, async (req, res) => {
     try {
@@ -141,7 +136,7 @@ app.get('/api/inspect', apiKeyAuth, async (req, res) => {
         if (!url) {
             return res.status(400).json({ error: 'No URL provided' });
         }
-        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'));
+        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'), { skipHealth: false });
         res.status(200).json(result);
     } catch (err) {
         console.error('Inspect API Error:', err.message);

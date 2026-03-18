@@ -4,7 +4,19 @@ const torrentService = require('../lib/torrentService');
 
 jest.mock('../lib/torrentService');
 
-describe('API Endpoints (Public)', () => {
+describe('API Endpoints (Mixed Auth)', () => {
+  const testApiKey = 'test-api-key-12345';
+  let originalApiKey;
+
+  beforeAll(() => {
+    originalApiKey = process.env.API_KEY;
+    process.env.API_KEY = testApiKey;
+  });
+
+  afterAll(() => {
+    process.env.API_KEY = originalApiKey;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -35,23 +47,26 @@ describe('API Endpoints (Public)', () => {
     expect(res.body).toEqual(mockResult);
   });
 
-  test('POST /api/torrent/url parses URL successfully without API Key', async () => {
+  test('GET /api/torrent/url requires API Key', async () => {
     const mockResult = {
       magnetUri: 'magnet:?xt=urn:btih:456',
       name: 'URL Torrent',
-      infoHash: '456',
-      length: 2048,
-      numFiles: 2,
-      files: [{ name: 'a.mp4', length: 1024 }, { name: 'b.mp4', length: 1024 }]
+      infoHash: '456'
     };
     
     torrentService.handleTorrentSource.mockResolvedValue(mockResult);
 
-    const res = await request(app)
-      .post('/api/torrent/url')
-      .send({ url: 'http://example.com/test.torrent' });
+    // 1. Without Key -> Fail
+    const resNoKey = await request(app)
+      .get('/api/torrent/url?url=http://example.com/test.torrent');
+    expect(resNoKey.statusCode).toBe(401);
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(mockResult);
+    // 2. With Key -> Success
+    const resWithKey = await request(app)
+      .get('/api/torrent/url?url=http://example.com/test.torrent')
+      .set('X-API-KEY', testApiKey);
+
+    expect(resWithKey.statusCode).toBe(200);
+    expect(resWithKey.body).toEqual(mockResult);
   });
 });

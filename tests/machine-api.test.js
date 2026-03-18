@@ -41,7 +41,8 @@ describe('Machine API Endpoints', () => {
       });
       expect(torrentService.handleTorrentSource).toHaveBeenCalledWith(
         'http://example.com/test.torrent',
-        false
+        false,
+        { skipHealth: true }
       );
     });
 
@@ -61,7 +62,8 @@ describe('Machine API Endpoints', () => {
       expect(res.statusCode).toBe(200);
       expect(torrentService.handleTorrentSource).toHaveBeenCalledWith(
         magnet,
-        true
+        true,
+        { skipHealth: true }
       );
     });
   });
@@ -83,7 +85,8 @@ describe('Machine API Endpoints', () => {
       expect(res.body).toEqual(mockResult);
       expect(torrentService.handleTorrentSource).toHaveBeenCalledWith(
         'http://example.com/full.torrent',
-        false
+        false,
+        { skipHealth: false }
       );
     });
   });

@@ -31,7 +31,14 @@ describe("MCP SSE Server", () => {
     });
 
     test("Full MCP Lifecycle", async () => {
-        const transport = new SSEClientTransport(new URL(`${baseUrl}/mcp?apiKey=${apiKey}`));
+        // Updated to use headers instead of insecure query params
+        const transport = new SSEClientTransport(new URL(`${baseUrl}/mcp`), {
+            requestInit: {
+                headers: {
+                    "X-API-KEY": apiKey
+                }
+            }
+        });
         const client = new Client({ name: "test-client", version: "1.0.0" }, { capabilities: {} });
 
         await client.connect(transport);
