@@ -6,14 +6,15 @@ const fileUpload = require('express-fileupload');
 const path = require('path');
 const helmet = require('helmet');
 const torrentService = require('./lib/torrentService');
-const { formatBytes } = require('./lib/utils');
 const { apiKeyAuth } = require('./lib/auth');
 const { globalLimiter, machineLimiter } = require('./lib/limiter');
-const { SSEServerTransport } = require("@modelcontextprotocol/sdk/server/sse.js");
-const mcpServer = require('./lib/mcpServer');
+const McpServerManager = require('./lib/mcpServer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize MCP Server Manager
+const mcpManager = new McpServerManager();
 
 app.set('trust proxy', 1);
 
@@ -48,28 +49,18 @@ app.get('/health', (req, res) => {
 /**
  * MCP SSE Endpoints (Secured)
  */
-let mcpTransport;
-
 app.get('/mcp', machineLimiter, apiKeyAuth, async (req, res) => {
-    if (mcpTransport) {
-        await mcpServer.close();
-    }
-    
     // Ensure the client uses the API key in the POST endpoint if it was provided in the query
     const queryKey = req.query.apiKey || req.query.api_key;
     const messagesEndpoint = queryKey 
         ? `/mcp/messages?apiKey=${queryKey}` 
         : "/mcp/messages";
 
-    mcpTransport = new SSEServerTransport(messagesEndpoint, res);
-    await mcpServer.connect(mcpTransport);
+    await mcpManager.handleSseConnection(messagesEndpoint, res);
 });
 
 app.post('/mcp/messages', machineLimiter, apiKeyAuth, async (req, res) => {
-    if (!mcpTransport) {
-        return res.status(400).json({ error: "No active MCP transport" });
-    }
-    await mcpTransport.handlePostMessage(req, res, req.body);
+    await mcpManager.handlePostMessage(req, res);
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

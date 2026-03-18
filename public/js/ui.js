@@ -86,7 +86,7 @@ function renderDistributionChart(files) {
 
 /**
  * Builds HTML for the primary torrent statistics grid.
- * @param {Object} data - The torrent metadata.
+ * @param {TorrentMetadata} data - The torrent metadata.
  * @returns {string} HTML string.
  */
 function buildStatsGridHtml(data) {
@@ -128,7 +128,7 @@ function buildMagnetSectionHtml(magnet, isMagnet) {
 
 /**
  * Builds HTML for the technical metadata table and trackers.
- * @param {Object} data - The torrent metadata.
+ * @param {TorrentMetadata} data - The torrent metadata.
  * @returns {string} HTML string.
  */
 function buildTechnicalDetailsHtml(data) {
@@ -158,7 +158,7 @@ function buildTechnicalDetailsHtml(data) {
       <div style="margin-top: 1.5rem; font-weight: 600; margin-bottom: 0.75rem;">Trackers</div>
       <div class="trackers-container">
         <table class="trackers-table">
-          ${data.trackers && data.trackers.length > 0 ? data.trackers.map((tr, i) => `<tr><td>${i+1}</td><td>${tr}</td></tr>`).join('') : '<tr><td colspan="2">None</td></tr>'}
+          ${data.trackers && data.trackers.length > 0 ? data.trackers.map((tr, i) => `<tr><td>${i + 1}</td><td>${tr}</td></tr>`).join('') : '<tr><td colspan="2">None</td></tr>'}
         </table>
       </div>
     </div>
@@ -167,7 +167,7 @@ function buildTechnicalDetailsHtml(data) {
 
 /**
  * Builds HTML for the scrollable list of files.
- * @param {Object} data - The torrent metadata.
+ * @param {TorrentMetadata} data - The torrent metadata.
  * @returns {string} HTML string.
  */
 function buildFileListHtml(data) {
