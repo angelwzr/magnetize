@@ -16,6 +16,11 @@ const PORT = process.env.PORT || 3000;
 // Initialize MCP Server Manager
 const mcpManager = new McpServerManager();
 
+// Helper to wrap async routes for centralized error handling
+const asyncHandler = fn => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
 app.set('trust proxy', 1);
 
 app.use(globalLimiter);
@@ -49,16 +54,14 @@ app.get('/health', (req, res) => {
 /**
  * MCP SSE Endpoints (Secured)
  */
-app.get('/mcp', machineLimiter, apiKeyAuth, async (req, res) => {
-    const apiKey = getApiKey(req);
-    // Standardize on header-based auth, but maintain SSE-compatible messages endpoint
+app.get('/mcp', machineLimiter, apiKeyAuth, asyncHandler(async (req, res) => {
     const messagesEndpoint = `/mcp/messages`;
     await mcpManager.handleSseConnection(messagesEndpoint, res);
-});
+}));
 
-app.post('/mcp/messages', machineLimiter, apiKeyAuth, async (req, res) => {
+app.post('/mcp/messages', machineLimiter, apiKeyAuth, asyncHandler(async (req, res) => {
     await mcpManager.handlePostMessage(req, res);
-});
+}));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -73,79 +76,73 @@ app.use('/api', machineLimiter);
  * @api {post} /api/torrent/file Parse uploaded .torrent file.
  * Publicly accessible via UI.
  */
-app.post('/api/torrent/file', async (req, res) => {
-    try {
-        if (!req.files || !req.files.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
-        const result = await torrentService.handleTorrentSource(req.files.file.data);
-        res.status(200).json(result);
-    } catch (err) {
-        console.error('File API Error:', err.message);
-        res.status(400).json({ error: err.message });
+app.post('/api/torrent/file', asyncHandler(async (req, res) => {
+    if (!req.files || !req.files.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
     }
-});
+    const result = await torrentService.handleTorrentSource(req.files.file.data);
+    res.status(200).json(result);
+}));
 
 /**
  * @api {get} /api/torrent/url Parse torrent URL or Magnet URI.
  * Secured - requires API Key.
  */
-app.get('/api/torrent/url', apiKeyAuth, async (req, res) => {
-    try {
-        const { url } = req.query;
-        if (!url) {
-            return res.status(400).json({ error: 'No URL provided' });
-        }
-        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'));
-        res.status(200).json(result);
-    } catch (err) {
-        console.error('URL API Error:', err.message);
-        res.status(400).json({ error: err.message });
+app.get('/api/torrent/url', apiKeyAuth, asyncHandler(async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'No URL provided' });
     }
-});
+    const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'));
+    res.status(200).json(result);
+}));
 
 /**
  * @api {get} /api/convert Convert torrent URL or Magnet URI to simplified magnet object.
  * Secured - requires API Key. Skips health check.
  */
-app.get('/api/convert', apiKeyAuth, async (req, res) => {
-    try {
-        const { url } = req.query;
-        if (!url) {
-            return res.status(400).json({ error: 'No URL provided' });
-        }
-        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'), { skipHealth: true });
-        res.status(200).json({
-            magnet: result.magnetUri,
-            infoHash: result.infoHash,
-            name: result.name
-        });
-    } catch (err) {
-        console.error('Convert API Error:', err.message);
-        res.status(400).json({ error: err.message });
+app.get('/api/convert', apiKeyAuth, asyncHandler(async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'No URL provided' });
     }
-});
+    const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'), { skipHealth: true });
+    res.status(200).json({
+        magnet: result.magnetUri,
+        infoHash: result.infoHash,
+        name: result.name
+    });
+}));
 
 /**
  * @api {get} /api/inspect Inspect torrent URL or Magnet URI for full metadata.
  * Secured - requires API Key. Performs health check.
  */
-app.get('/api/inspect', apiKeyAuth, async (req, res) => {
-    try {
-        const { url } = req.query;
-        if (!url) {
-            return res.status(400).json({ error: 'No URL provided' });
-        }
-        const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'), { skipHealth: false });
-        res.status(200).json(result);
-    } catch (err) {
-        console.error('Inspect API Error:', err.message);
-        res.status(400).json({ error: err.message });
+app.get('/api/inspect', apiKeyAuth, asyncHandler(async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'No URL provided' });
     }
-});
+    const result = await torrentService.handleTorrentSource(url, url.startsWith('magnet:'), { skipHealth: false });
+    res.status(200).json(result);
+}));
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Centralized Error Handler Middleware
+app.use((err, req, res, next) => {
+    const statusCode = err.status || err.statusCode || 400;
+    const message = err.message || 'An unexpected error occurred';
+    
+    // Domain-specific error classification (internal only, for logging)
+    console.error(`[API Error] ${req.method} ${req.path}:`, message);
+    
+    res.status(statusCode).json({
+        error: message,
+        timestamp: new Date().toISOString()
+    });
 });
 
 /**
