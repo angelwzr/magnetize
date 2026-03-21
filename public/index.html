@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Magnetize - Minimalistic Torrent Metadata Extractor</title>
+  <title>Magnetize - Minimalistic Torrent Data Extractor</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
-  <script src="js/chart.js"></script>
+  <script src="chart.js"></script>
 </head>
 <body>
   <div class="container">
@@ -14,7 +14,7 @@
       <div class="header-content">
         <div class="brand">
           <div class="logo">🧲 <span>Magnetize</span></div>
-          <p class="subtitle">Minimalistic torrent metadata extractor</p>
+          <p class="subtitle">Minimalistic torrent data extractor</p>
         </div>
         <div class="theme-switcher" id="themeSwitcher">
           <button data-theme="light" title="Light Theme">☀️</button>
@@ -31,7 +31,7 @@
           <button class="tab-btn" data-tab="url"><a href="#url">URL</a></button>
         </div>
 
-        <form id="torrentForm">
+        <form id="torrentForm" onsubmit="return false;">
           <!-- File Upload -->
           <div class="input-group active" id="file-input">
             <div class="file-drop-zone" id="fileDropZone">
@@ -58,10 +58,10 @@
     <div id="status" class="status"></div>
     
     <footer>
-      <p>&copy; 2026 Roman Linev &bull; <a href="https://github.com/angelwzr/magnetize" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a> &bull; v1.1.0 &bull; Privacy First &bull; No Tracking</p>
+      <p>&copy; 2026 Roman Linev &bull; <a href="https://github.com/angelwzr/magnetize" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a> v1.1.0 &bull; Privacy First &bull; No Tracking</p>
     </footer>
   </div>
 
-  <script src="js/app.js" type="module"></script>
+  <script src="magnetize.js"></script>
 </body>
 </html>

@@ -31,13 +31,17 @@ Thumbs.db
 
 # Agent Files
 .agents/
+.claude/
+.kilocode/
 .gemini/
 GEMINI.md
-AGENTS.md
-scorecard.png
 .desloppify/
 *.md.tmp
+scorecard.png
 
 # Project Specific
 package-lock.json
 *.log
+
+# Local Plans
+plans/
