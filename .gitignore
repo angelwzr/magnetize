@@ -35,6 +35,7 @@ Thumbs.db
 .kilocode/
 .gemini/
 GEMINI.md
+AGENTS.md
 .desloppify/
 *.md.tmp
 scorecard.png
