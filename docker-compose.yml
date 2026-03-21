@@ -9,4 +9,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      # Optional: uncomment and configure below
+      # - ENABLE_API=true
+      # - API_KEY=your-secret-key
+      # - HTTP_PROXY=http://proxy:8080
+      # - HTTPS_PROXY=http://proxy:8080
     restart: unless-stopped

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test files
+tests/
+*.test.js
+coverage/
+
+# Agent/development files
+.claude/
+.kilocode/
+.gemini/
+AGENTS.md
+GEMINI.md
+*.md.tmp
+
+# Local config
+.env
+.env.local
+.env.*.local
