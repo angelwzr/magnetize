@@ -4,6 +4,8 @@ Magnetize is a minimalistic, modern, and privacy-focused torrent metadata extrac
 
 Designed for self-hosting, it performs all metadata fetching and health checks on the server side, keeping the user's IP hidden from trackers and remote hosts.
 
+**[Live Demo](https://magnetize.onrender.com/)**
+
 ## ✨ Features
 
 - **Modern & Minimal UI**: A clean, system-adaptive interface that respects your OS theme. Fully responsive with touch-friendly targets.
